@@ -2,18 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const querystring = require("querystring");
-const mongoose = require("mongoose");
-
-mongoose.set('strictQuery' ,false)
-mongoose.connect("mongodb://127.0.0.1:27017/loginApp", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-const userSchema = new mongoose.Schema({
-  username: String,
-  password: String,
-});
-const User = mongoose.model("User", userSchema);
+const User = require("./dataBase.js");
 
 function serveFile(res, filePath, contentType) {
   fs.readFile(filePath, (err, content) => {
@@ -26,10 +15,13 @@ function serveFile(res, filePath, contentType) {
     }
   });
 }
+
 const server = http.createServer((req, res) => {
   if (req.method === "GET") {
-    if (req.url === "/" || req.url === "/index.html") {
-      serveFile(res, path.join(__dirname, "public", "index.html"), "text/html");
+    if (req.url === "/") {
+      serveFile(res, path.join(__dirname, "public", "signup.html"), "text/html");
+    } else if (req.url === "/login") {
+      serveFile(res, path.join(__dirname, "public", "login.html"), "text/html");
     } else if (req.url === "/style.css") {
       serveFile(res, path.join(__dirname, "public", "style.css"), "text/css");
     } else {
@@ -37,12 +29,12 @@ const server = http.createServer((req, res) => {
       res.end("Not Found");
     }
   }
-    if (req.method === "POST") {
+
+  if (req.method === "POST") {
     let body = "";
     req.on("data", chunk => {
       body += chunk.toString();
     });
-
     req.on("end", async () => {
       const formData = querystring.parse(body);
       const { username, password } = formData;
@@ -54,7 +46,7 @@ const server = http.createServer((req, res) => {
         } else {
           const newUser = new User({ username, password });
           await newUser.save();
-          res.end("Signup successful.You can now login.");
+          res.end("Signup successful. You can now login.");
         }
       }
 
